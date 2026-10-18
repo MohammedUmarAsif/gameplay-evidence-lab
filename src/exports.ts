@@ -1,4 +1,5 @@
 import { zipSync, strToU8 } from "fflate";
+import { describeDataset } from "./analytics";
 import {
   checked,
   parseDataset,
@@ -42,6 +43,10 @@ export const DICTIONARY = {
       "id PK; eventId FK; separate imported machine suggestion with model/version/prompt/interval/limitations. Always unreviewed; ML permission required.",
     split_groups:
       "Connected sessions sharing a participant, source group or comparison pair. Keep entire leakageGroup together. Partition is intentionally unassigned; this is not a validated train/test split.",
+    session_coverage:
+      "Derived whole-workspace view. Session duration and union of raw annotation intervals, including uncertain/excluded events; overlapping intervals count once within a session.",
+    event_review_status:
+      "Derived whole-workspace view. Raw label and latest appended human review label/status/version side by side; pending means no human review. Not a model accuracy measure.",
   },
   limitations: [
     "No hidden engine telemetry is inferred.",
@@ -149,6 +154,39 @@ export async function exportZip(data: Dataset): Promise<Uint8Array> {
     );
   }
   files["split_groups.csv"] = strToU8(csv(splitGroups(data)));
+  const analysis = describeDataset(exported);
+  files["descriptive-summary.json"] = strToU8(
+    JSON.stringify(
+      {
+        ...analysis,
+        sourceDatasetSHA256: envelope.exportMetadata.datasetSHA256,
+        scope: "whole-exported-workspace",
+      },
+      null,
+      2,
+    ),
+  );
+  files["session_coverage.csv"] = strToU8(
+    csv(analysis.sessions, [
+      "sessionId",
+      "configurationId",
+      "durationSeconds",
+      "events",
+      "annotatedSeconds",
+      "feedbackRecords",
+    ]),
+  );
+  files["event_review_status.csv"] = strToU8(
+    csv(analysis.eventRows, [
+      "eventId",
+      "sessionId",
+      "rawLabel",
+      "reviewedLabel",
+      "reviewStatus",
+      "annotationVersion",
+      "durationSeconds",
+    ]),
+  );
   return zipSync(files);
 }
 export function download(

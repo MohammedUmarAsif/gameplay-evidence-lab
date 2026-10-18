@@ -15,6 +15,9 @@ import {
 } from "../src/domain";
 import { csv, exportEnvelope, exportZip, importEnvelope } from "../src/exports";
 import { validatePublicEnvironment } from "../build/public-config";
+import { describeDataset, intervalUnion } from "../src/analytics";
+import { checkRecordingDuration } from "../src/media";
+import { loadLocal, saveLocal, eraseLocal, LOCAL_KEY } from "../src/storage";
 
 test("synthetic example has valid references, explicit missingness and correct origin", () => {
   const data = checked(demoDataset());
@@ -276,4 +279,133 @@ test("public build configuration rejects secret-like variables and admin-role ke
   assert.doesNotThrow(() =>
     validatePublicEnvironment({ VITE_COLLECTION_ENABLED: "false" }),
   );
+});
+
+test("coverage unions nested, touching and overlapping intervals without mutating originals", () => {
+  const rows = [
+    { startSeconds: 5, endSeconds: 9 },
+    { startSeconds: 1, endSeconds: 6 },
+    { startSeconds: 2, endSeconds: 3 },
+    { startSeconds: 9, endSeconds: 10 },
+  ];
+  const before = structuredClone(rows);
+  assert.equal(intervalUnion(rows), 9);
+  assert.equal(intervalUnion([]), 0);
+  assert.deepEqual(rows, before);
+});
+
+test("analysis keeps empty denominators unavailable and ordinal missingness explicit", () => {
+  const d = demoDataset();
+  const summary = describeDataset(d);
+  assert.equal(summary.coverage.sessionSeconds, 240);
+  assert.ok(Math.abs(summary.coverage.annotatedSeconds - 6.4) < 1e-10);
+  assert.deepEqual(summary.reviewCounts, {
+    pending: 2,
+    verified: 0,
+    uncertain: 0,
+    excluded: 0,
+  });
+  assert.equal(summary.ratings[0].bins[1].count, 1);
+  assert.equal(summary.ratings[2].missing, 1);
+  assert.equal(
+    summary.ratings[2].bins.reduce((sum, row) => sum + row.count, 0),
+    0,
+  );
+  const empty = deleteSession(
+    deleteSession(d, d.sessions[0].id),
+    d.sessions[1].id,
+  );
+  assert.equal(describeDataset(empty).coverage.fraction, null);
+});
+
+test("latest human review determines descriptive decision while raw labels survive", () => {
+  const d = demoDataset();
+  for (const [index, status] of (["verified", "excluded"] as const).entries())
+    d.reviews.push({
+      id: `review-${index}`,
+      eventId: d.events[0].id,
+      reviewerId: "pilot-reviewer",
+      originalLabel: d.events[0].label,
+      correctedLabel: "Reviewed action",
+      status,
+      notes: "Pilot review",
+      annotationVersion: index + 2,
+      createdAt: now(),
+    });
+  const result = describeDataset(d);
+  assert.equal(result.reviewCounts.excluded, 1);
+  assert.equal(result.reviewCounts.verified, 0);
+  assert.equal(result.eventRows[0].rawLabel, "Attack interrupted");
+  assert.equal(result.eventRows[0].annotationVersion, 3);
+  assert.equal(result.eventRows[0].reviewedLabel, "Reviewed action");
+});
+
+test("ZIP summaries reproduce the checked full dataset and have empty-table headers", async () => {
+  const d = demoDataset(),
+    zip = unzipSync(await exportZip(d));
+  const { sourceDatasetSHA256, scope, ...summary } = JSON.parse(
+    strFromU8(zip["descriptive-summary.json"]),
+  );
+  assert.deepEqual(summary, describeDataset(d));
+  assert.equal(scope, "whole-exported-workspace");
+  assert.equal(
+    sourceDatasetSHA256,
+    JSON.parse(strFromU8(zip["manifest.json"])).datasetSHA256,
+  );
+  assert.match(
+    strFromU8(zip["event_review_status.csv"]),
+    /rawLabel.*reviewedLabel/,
+  );
+  const empty = deleteSession(
+    deleteSession(d, d.sessions[0].id),
+    d.sessions[1].id,
+  );
+  const emptyZip = unzipSync(await exportZip(empty));
+  assert.match(
+    strFromU8(emptyZip["session_coverage.csv"]),
+    /sessionId.*annotatedSeconds/,
+  );
+});
+
+test("clip duration rejects mismatches and distinguishes unknown metadata from matches", () => {
+  assert.equal(checkRecordingDuration(10.03, 10), "matched");
+  assert.equal(checkRecordingDuration(Infinity, 10), "unknown");
+  assert.throws(() => checkRecordingDuration(2, 10), /Nothing was attached/);
+  assert.throws(() => checkRecordingDuration(0, 10), /Nothing was attached/);
+});
+
+test("stale local snapshots cannot overwrite or erase newer saved records", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  const storage = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    },
+  });
+  try {
+    const first = loadLocal().data;
+    saveLocal(first);
+    const later = { ...first, createdAt: "2026-10-18T01:00:00.000Z" };
+    storage.set(LOCAL_KEY, JSON.stringify(later));
+    assert.throws(() => saveLocal(first), /another tab/);
+    assert.throws(() => eraseLocal(), /another tab/);
+    assert.equal(storage.get(LOCAL_KEY), JSON.stringify(later));
+    assert.deepEqual(loadLocal().data, later);
+    saveLocal(later);
+    storage.set(LOCAL_KEY, "damaged raw data");
+    assert.ok(loadLocal().error);
+    assert.equal(storage.get(LOCAL_KEY), "damaged raw data");
+    eraseLocal();
+    assert.equal(storage.get(LOCAL_KEY), undefined);
+  } finally {
+    if (descriptor)
+      Object.defineProperty(globalThis, "localStorage", descriptor);
+    else Reflect.deleteProperty(globalThis, "localStorage");
+  }
 });

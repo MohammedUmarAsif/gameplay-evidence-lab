@@ -17,9 +17,9 @@ No application document was edited, copied into the public frontend, or submitte
 | Check | Observed result |
 |---|---|
 | `npm run check` | TypeScript passed |
-| `npm test` | 24 tests passed |
+| `npm test` | 30 tests passed |
 | `npm run build` | Static production build passed |
-| `npm run test:e2e` | 12 tests passed across desktop and mobile Chromium projects |
+| `npm run test:e2e` | 20 tests passed across desktop and mobile Chromium projects |
 | `npm run test:backend` | Explicitly skipped: no disposable hosted backend/test accounts configured |
 | Deno check of evidence-api with its pinned import map | Passed |
 | `npm audit --omit=dev` | Zero reported production dependency vulnerabilities at check time |
@@ -48,6 +48,16 @@ Desktop viewport: 1440×1000. Mobile: iPhone-13-sized Chromium emulation, 390×6
 - Fixed a 320px overflow caused by an absolutely positioned accessible table header; contained it correctly. Mobile session cards expose actions without horizontal table scrolling.
 
 Synthetic-only screenshots: `screenshots/synthetic-desktop.png`, `screenshots/synthetic-mobile.png`. They show instrument fixtures, not participant data or research results.
+
+## Reliability and descriptive-analysis pass
+
+Added human-review counts using the latest appended decision, annotation coverage using interval unions, and separate ordinal response distributions with explicit missingness. Filters affect on-screen summaries; ZIP summaries remain whole-workspace. Derived export views carry definitions, analysis version and the source dataset hash. Unit checks cover nested/touching intervals, empty denominators, latest-review decisions, raw-label preservation and reproducible exports. See [definitions and limits](DESCRIPTIVE_SUMMARIES.md).
+
+Stale tabs now fail before overwriting or erasing newer saved records. Browser tests used two tabs in one profile, confirmed the newer session survived the rejected stale write, then explicitly reloaded saved records. Corrupt saved storage remained unchanged and could be downloaded for private recovery before deliberate erasure. This is a stale-snapshot guard, not a transactional multi-user storage engine.
+
+Local videos are probed before attachment persistence. Duration mismatch and unsupported bytes were rejected without saving evidence references. The original playback fixture contained one frame at time zero; the strengthened check rejected it. Replaced it with a disposable animated fixture, verified mismatch rejection, then used the correct session duration and verified actual playback time advanced and marking worked without upload. Missing finite-duration metadata remains explicitly flagged for manual verification; file identity is not verified. Obsolete playback URLs are released on import, workspace reset and linked deletion.
+
+All 20 browser tests passed on the final full run, including the original end-to-end workflow, ten-route accessibility checks, desktop/mobile layouts, 320px overflow checks, chart/filter origin isolation, multi-tab conflict and corrupt-storage recovery. Synthetic analytical screenshots are in `screenshots/synthetic-analytics-desktop.png` and `screenshots/synthetic-analytics-mobile.png`. They were visually inspected. No real gameplay or participant data was used. Hosted-backend integration remains explicitly skipped because no disposable backend/test accounts are configured. Production dependency audit reported zero vulnerabilities.
 
 ## Data and security evidence
 

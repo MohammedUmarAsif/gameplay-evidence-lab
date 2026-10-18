@@ -19,7 +19,9 @@
     "comparisons": "id PK; sessionA/sessionB FK. Human observations do not establish identical states or causal effects. Controlled simulations require state/seed/controller references.",
     "reviews": "id PK; eventId FK; append-only originalLabel/correctedLabel, decision, notes, timestamp and consecutive annotationVersion. Latest version is a reviewed label, not a replacement raw report.",
     "predictions": "id PK; eventId FK; separate imported machine suggestion with model/version/prompt/interval/limitations. Always unreviewed; ML permission required.",
-    "split_groups": "Connected sessions sharing a participant, source group or comparison pair. Keep entire leakageGroup together. Partition is intentionally unassigned; this is not a validated train/test split."
+    "split_groups": "Connected sessions sharing a participant, source group or comparison pair. Keep entire leakageGroup together. Partition is intentionally unassigned; this is not a validated train/test split.",
+    "session_coverage": "Derived whole-workspace view. Session duration and union of raw annotation intervals, including uncertain/excluded events; overlapping intervals count once within a session.",
+    "event_review_status": "Derived whole-workspace view. Raw label and latest appended human review label/status/version side by side; pending means no human review. Not a model accuracy measure."
   },
   "limitations": [
     "No hidden engine telemetry is inferred.",

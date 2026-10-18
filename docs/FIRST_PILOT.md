@@ -22,6 +22,8 @@ Read and actively select the required adult/information choices. Media reuse and
 
 Choose the local file on **Annotate evidence**. Its bytes stay on your device; only an opaque reference is retained. Reattach it after a reload.
 
+The app checks readable metadata and finite duration before saving the attachment. If duration differs by more than one second, create a new session with the correct duration. If the container has no finite duration metadata, verify the duration yourself. Always reattach the original clip; file identity is not verified.
+
 Seek with the video controls. Press `[` for start and `]` for end outside form fields, or use the labelled buttons. Describe the action, involved components, visible outcome and source. Use units for any known configuration property. Keep invisible engine state unknown.
 
 Record what you intended and what occurred on **Player feedback**. The 1–5 items may be left unanswered. An optional suggestion is a raw report, not a validated design recommendation.
@@ -31,6 +33,10 @@ On **Researcher review**, inspect the clip again. Verify, mark uncertain, or exc
 ## Inspect and back up
 
 Use **Dataset & exports** to inspect missingness, explicit denominators and warnings. Filter summaries by configuration; the export still includes the whole workspace. Do not interpret two sessions as two independent participants.
+
+Inspect **Human review status**, **Annotation coverage**, and **Feedback response distributions**. Overlapping event intervals count once per session; unanswered ratings remain missing. The ZIP includes reproducible descriptive summaries with definitions and a source dataset checksum. See [summary definitions](DESCRIPTIVE_SUMMARIES.md).
+
+Use one editing tab. If another tab changes the records, export this tab’s snapshot if needed and choose **Reload saved local records** before continuing. An unreadable saved entry can be downloaded privately using **Download raw storage for recovery** before deliberate erasure. This recovery file is not a validated export.
 
 Download JSON and the dataset ZIP to a private folder outside the Git repository. Reimport `dataset.json` to check relationships and the checksum. CSVs are analysis views, not the reimport format. Video files stay separate; preserve your own secure mapping from opaque media IDs to recordings if needed. Do not put that mapping in a public repository.
 

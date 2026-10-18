@@ -11,7 +11,7 @@ async function localStudy(page: Page) {
   await page.getByRole("button", { name: "Save study", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Study saved");
 }
-async function newSession(page: Page) {
+async function newSession(page: Page, duration = "10") {
   await page.getByRole("link", { name: "Sessions", exact: true }).click();
   await page
     .getByLabel("Game title", { exact: true })
@@ -19,7 +19,9 @@ async function newSession(page: Page) {
   await page
     .getByLabel("New configuration label", { exact: true })
     .fill("Pilot configuration A");
-  await page.getByLabel("Recording / session duration in seconds").fill("10");
+  await page
+    .getByLabel("Recording / session duration in seconds")
+    .fill(duration);
   await page.getByRole("button", { name: "Save session", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Adult confirmation");
   await page.getByLabel("I am 18 or older", { exact: false }).check();
@@ -247,7 +249,13 @@ test("local video selection and marking never send recording bytes", async ({
         );
     });
     recorder.start();
+    let frame = 0;
+    const drawing = setInterval(() => {
+      ctx.fillStyle = frame++ % 2 ? "#214a42" : "#315a52";
+      ctx.fillRect(0, 0, 320, 180);
+    }, 50);
     await new Promise((resolve) => setTimeout(resolve, 600));
+    clearInterval(drawing);
     recorder.stop();
     stream.getTracks().forEach((track) => track.stop());
     return result;
@@ -256,17 +264,44 @@ test("local video selection and marking never send recording bytes", async ({
   page.on("request", (r) => {
     if (r.method() !== "GET") posts.push(r.url());
   });
+  await page.locator("#video-file").setInputFiles({
+    name: "synthetic-playback.webm",
+    mimeType: "video/webm",
+    buffer: Buffer.from(bytes),
+  });
+  await expect(page.getByRole("alert")).toContainText("Nothing was attached");
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("gameplay-evidence-lab:local:v1")!)
+          .sessions[0].evidenceKind,
+    ),
+  ).toBe("none");
+  await newSession(page, "0.6");
   await page
-    .locator("#video-file")
-    .setInputFiles({
-      name: "synthetic-playback.webm",
-      mimeType: "video/webm",
-      buffer: Buffer.from(bytes),
-    });
+    .getByRole("button", { name: "Annotate", exact: true })
+    .filter({ visible: true })
+    .last()
+    .click();
+  await page.locator("#video-file").setInputFiles({
+    name: "synthetic-playback.webm",
+    mimeType: "video/webm",
+    buffer: Buffer.from(bytes),
+  });
   await expect(page.locator("video")).toBeVisible();
   await expect(
     page.getByText("synthetic-playback.webm · never uploaded"),
   ).toBeVisible();
+  await page.locator("video").evaluate(async (video: HTMLVideoElement) => {
+    await video.play();
+  });
+  await expect
+    .poll(() =>
+      page
+        .locator("video")
+        .evaluate((video: HTMLVideoElement) => video.currentTime),
+    )
+    .toBeGreaterThan(0);
   await page.getByRole("button", { name: "Mark start [", exact: true }).click();
   expect(
     await page.getByLabel("Start (seconds)", { exact: true }).inputValue(),
@@ -339,4 +374,146 @@ test("320px workspace and dataset do not overflow", async ({ page }) => {
       `${route}: ${JSON.stringify(size)}`,
     ).toBe(true);
   }
+});
+
+test("descriptive charts keep origins, denominators, missing ratings and filtered scope explicit", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/#dataset");
+  await expect(
+    page.getByRole("heading", { name: "Human review status" }),
+  ).toBeVisible();
+  const reviews = page.getByRole("region", { name: "Human review status" });
+  await expect(reviews).toContainText("Review pending");
+  await expect(reviews).toContainText("2 / 2");
+  const ratings = page.getByRole("region", {
+    name: "Feedback response distributions",
+  });
+  await expect(ratings).toContainText("0 answered / 1 records · 1 missing");
+  await expect(
+    page.getByText("6.4 / 240 recorded seconds", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `docs/screenshots/synthetic-analytics-${testInfo.project.name}.png`,
+    fullPage: true,
+  });
+  if (testInfo.project.name === "desktop")
+    await page.screenshot({
+      path: "docs/screenshots/synthetic-analytics-overview.png",
+    });
+  await page.getByLabel("Analysis configuration").selectOption("demo-b");
+  await expect(
+    page.getByText("3 / 120 recorded seconds", { exact: true }),
+  ).toBeVisible();
+  await expect(ratings).toContainText("0 answered / 0 records · 0 missing");
+  await page
+    .getByRole("button", { name: "Private local pilot", exact: true })
+    .click();
+  await expect(
+    page.getByText("0 / 0 recorded seconds", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("not available (no sessions)", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("3 / 120 recorded seconds", { exact: true }),
+  ).toHaveCount(0);
+});
+
+test("a stale tab cannot overwrite newer local records and can explicitly reload them", async ({
+  page,
+  context,
+}) => {
+  await localStudy(page);
+  const other = await context.newPage();
+  await other.goto("/#study");
+  await other
+    .getByRole("button", { name: "Private local pilot", exact: true })
+    .click();
+  await newSession(page);
+  await expect(other.getByRole("alert")).toContainText("another tab");
+  await other.getByRole("button", { name: "Save study", exact: true }).click();
+  await expect(other.getByRole("alert")).toContainText(
+    "No data was overwritten",
+  );
+  expect(
+    await other.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("gameplay-evidence-lab:local:v1")!)
+          .sessions.length,
+    ),
+  ).toBe(1);
+  await other
+    .getByRole("link", { name: "Dataset & exports", exact: true })
+    .click();
+  await other
+    .getByRole("button", { name: "Reload saved local records", exact: true })
+    .click();
+  await expect(other.getByRole("status")).toContainText("reloaded");
+  await other.getByRole("link", { name: "Sessions", exact: true }).click();
+  await expect(
+    other
+      .getByRole("button", { name: "Annotate", exact: true })
+      .filter({ visible: true }),
+  ).toHaveCount(1);
+  await other.close();
+});
+
+test("unplayable video does not attach an evidence reference", async ({
+  page,
+}) => {
+  await localStudy(page);
+  await newSession(page);
+  await page.getByRole("button", { name: "Annotate", exact: true }).click();
+  await page.locator("#video-file").setInputFiles({
+    name: "invalid.webm",
+    mimeType: "video/webm",
+    buffer: Buffer.from("deliberately invalid synthetic fixture"),
+  });
+  await expect(page.getByRole("alert")).toContainText("Nothing was attached");
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("gameplay-evidence-lab:local:v1")!)
+          .sessions[0].evidenceKind,
+    ),
+  ).toBe("none");
+  await expect(page.locator("video")).toHaveCount(0);
+});
+
+test("corrupt saved storage is preserved, recoverable and never silently overwritten", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "gameplay-evidence-lab:local:v1",
+      "DAMAGED_SYNTHETIC_RECOVERY_FIXTURE",
+    ),
+  );
+  await page
+    .getByRole("button", { name: "Private local pilot", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("preserved");
+  await page
+    .getByRole("link", { name: "Dataset & exports", exact: true })
+    .click();
+  const downloading = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download raw storage for recovery" })
+    .click();
+  const download = await downloading;
+  expect(await readFile((await download.path())!, "utf8")).toBe(
+    "DAMAGED_SYNTHETIC_RECOVERY_FIXTURE",
+  );
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("gameplay-evidence-lab:local:v1"),
+    ),
+  ).toBe("DAMAGED_SYNTHETIC_RECOVERY_FIXTURE");
+  page.once("dialog", (d) => d.accept());
+  await page
+    .getByRole("button", { name: "Erase all local pilot records" })
+    .click();
+  await expect(page.getByRole("status")).toContainText("erased");
 });

@@ -22,7 +22,9 @@ import {
   type Session,
 } from "./domain";
 import { demoDataset } from "./demo";
-import { loadLocal, saveLocal, LOCAL_KEY } from "./storage";
+import { loadLocal, saveLocal, eraseLocal, LOCAL_KEY } from "./storage";
+import { analysisView } from "./analysis-view";
+import { prepareLocalVideo } from "./media";
 import {
   exportEnvelope,
   exportZip,
@@ -90,6 +92,11 @@ const originLabel = () =>
   mode === "demo" ? "Synthetic demonstration" : "Private local pilot";
 const activeSession = () =>
   data.sessions.find((s) => s.id === selectedSession) ?? data.sessions[0];
+function clearMedia() {
+  if (mediaURL) URL.revokeObjectURL(mediaURL);
+  mediaURL = mediaName = mediaSession = "";
+  startMark = endMark = 0;
+}
 const sessionOptions = () =>
   data.sessions.map(
     (s) =>
@@ -155,10 +162,7 @@ function navigate(next: string) {
 function switchMode(next: Mode) {
   if (next === mode) return;
   if (dirty && !confirm("Discard the unsaved form changes?")) return;
-  if (mediaURL) URL.revokeObjectURL(mediaURL);
-  mediaURL = "";
-  mediaName = "";
-  mediaSession = "";
+  clearMedia();
   selectedSession = "";
   selectedEvent = "";
   draftStudy = null;
@@ -260,7 +264,7 @@ function sessionsView() {
       ["experienced", "Experienced"],
       ["not-applicable", "Not applicable"],
     ])}
-    ${select("configurationId", "Configuration", [["new", "Create a new configuration"], ...data.configurations.map((c) => [c.id, c.label] as [string, string])])}
+    ${select("configurationId", "Configuration", [["new", "Create a new configuration"], ...data.configurations.filter((c) => c.studyId === s.id).map((c) => [c.id, c.label] as [string, string])])}
     ${input("configurationLabel", "New configuration label", "", "required")}${input("equipment", "Equipment / build (unknown is allowed)", "unknown", "required")}
     ${input("propertyName", "Optional known property name")}${input("propertyValue", "Property value (leave blank if unknown)", "", 'type="number" step="any"')}${input("propertyUnit", "Property unit", "not-applicable")}${select("propertyStatus", "Property evidence", ["unknown", "observed", "self-reported"])}
     ${input("propertySource", "Property source", "unknown")}${input("encounter", "Encounter", "unknown", "required")}${input("conditions", "Relevant conditions", "unknown", "required")}${input("durationSeconds", "Recording / session duration in seconds", "", 'type="number" min="0.01" max="86400" step="0.01" required')}
@@ -306,7 +310,7 @@ function annotateView() {
     <div class="annotation-grid"><section class="panel media-panel"><div class="panel-heading"><h2>Recording</h2><span>Local playback only</span></div>
     ${mediaURL && mediaSession === session.id ? `<video id="player" controls preload="metadata" src="${esc(mediaURL)}" aria-label="Local gameplay recording"></video><p class="media-name">${esc(mediaName)} · never uploaded</p>` : `<div class="media-empty"><span class="media-symbol" aria-hidden="true">▷</span><h3>No recording attached</h3><p>${mode === "demo" ? "This example is synthetic. No real clip exists." : "Choose your clip. Its bytes stay on this device and are not stored in browser drafts."}</p></div>`}
     <div class="media-tools"><label class="btn file-button">Choose local video<input id="video-file" type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime"></label>${button("Mark start [", "mark-start")}${button("Mark end ]", "mark-end")}</div>
-    <p class="helper">Use the player controls to seek. [ and ] mark the current time outside form fields. Reattach local files after a reload. Intervals are relative to this recording. Give sessions from the same recording the same source grouping ID.</p>
+    <p class="helper">Use the player controls to seek. [ and ] mark the current time outside form fields. Reattach local files after a reload. Intervals are relative to this recording. Give sessions from the same recording the same source grouping ID. Reattach the same original clip: file identity is not verified. Use a new session for a different recording.</p>
     ${session.evidenceRef ? `<p class="panel-body"><a href="${esc(session.evidenceRef)}" target="_blank" rel="noopener noreferrer">Open evidence reference</a>. Nothing is fetched until you open it.</p>` : ""}
     </section><form id="event-form" class="panel form-panel"><div class="panel-heading"><h2>New event</h2><span>Raw annotation</span></div><div class="form-grid">
     ${input("startSeconds", "Start (seconds)", String(startMark), 'type="number" min="0" step="0.001" required')}${input("endSeconds", "End (seconds)", String(endMark), 'type="number" min="0" step="0.001" required')}
@@ -464,12 +468,13 @@ function datasetView() {
     note(
       `${mode === "demo" ? "Synthetic examples only." : "Personal/convenience sample only."} Counts describe this workspace, not the player population. No causal effect or research finding is established.`,
     ) +
+    analysisView(analysis) +
     `<section class="panel panel-body"><h2>Validated export</h2><p>Exports contain the whole workspace, independent of the analysis filter. JSON preserves all relationships and original/reviewed labels. The ZIP adds related CSV tables, dictionary, split-group suggestions and a SHA-256 manifest. Study contact fields are blanked. No video bytes or account identity are exported. Free text and private references may still identify people: inspect before sharing.</p><div class="actions">${button("Export JSON", "export-json", "btn-primary")}${button("Export dataset ZIP", "export-zip")}<label class="btn file-button">Reimport JSON<input type="file" id="import-file" accept=".json,application/json"></label>${button("Download data dictionary", "dictionary")}</div><p class="helper">Reimport replaces this workspace after confirmation; it does not merge datasets or relabel their origin. Maximum 2 MB. CSV is an analysis view; use dataset.json for reimport.</p></section>
     <div class="work-grid"><section class="panel"><div class="panel-heading"><h2>Missingness</h2><span>Explicit denominators</span></div><table><thead><tr><th>Measure</th><th>Missing / sessions</th></tr></thead><tbody><tr><td>Known game version</td><td>${unknownVersion} / ${total}</td></tr><tr><td>Session feedback</td><td>${missingFeedback} / ${total}</td></tr><tr><td>Attached evidence</td><td>${s.filter((r) => r.evidenceKind === "none").length} / ${total}</td></tr></tbody></table></section><section class="panel"><div class="panel-heading"><h2>Experience breakdown</h2><span>Sessions, not unique people</span></div><table><thead><tr><th>Experience</th><th>Sessions / total</th></tr></thead><tbody>${breakdown("experience") || '<tr><td colspan="2">No sessions</td></tr>'}</tbody></table></section></div>
     <section class="panel"><div class="panel-heading"><h2>Configuration breakdown</h2></div><table><thead><tr><th>Configuration</th><th>Sessions / total</th></tr></thead><tbody>${breakdown("configurationId") || '<tr><td colspan="2">No sessions</td></tr>'}</tbody></table></section>
     <section class="panel panel-body"><h2>Suggestions in the collected sample</h2><p>${suggestions.length} of ${analysis.feedback.length} feedback records in this view contain an optional suggestion. This is not a population preference estimate; repeated responses from one person are not independent participants.</p>${suggestions.map((f) => `<blockquote>${esc(f.suggestion)}</blockquote>`).join("")}</section>
     <details class="panel panel-body"><summary>Inspect ${issues.length} quality warnings</summary><ul>${issues.map((w) => `<li>${esc(w)}</li>`).join("") || "<li>No recorded warnings.</li>"}</ul></details>
-    ${mode === "local" ? `<section class="panel panel-body"><h2>Local data controls</h2><p>Browser storage is not encrypted, synced or guaranteed permanent. Anyone using this browser profile may access it. Export backups under your control.</p>${button("Erase all local pilot records", "erase-local", "btn-danger")}</section>` : ""}`
+    ${mode === "local" ? `<section class="panel panel-body"><h2>Local data controls</h2><p>Browser storage is not encrypted, synced or guaranteed permanent. Anyone using this browser profile may access it. Export backups under your control.</p><div class="actions">${button("Reload saved local records", "reload-local")}${button("Download raw storage for recovery", "recover-local")}${button("Erase all local pilot records", "erase-local", "btn-danger")}</div></section>` : ""}`
   );
 }
 function collectionView() {
@@ -676,6 +681,7 @@ function wire() {
               deleteSession(data, b.dataset.deleteSession!),
               "Session and linked records deleted.",
             );
+            if (mediaSession === b.dataset.deleteSession) clearMedia();
             render();
           } catch (e) {
             showError(e);
@@ -767,57 +773,65 @@ function wire() {
     };
   const videoFile = document.querySelector<HTMLInputElement>("#video-file");
   if (videoFile)
-    videoFile.onchange = () => {
+    videoFile.onchange = async () => {
       const file = videoFile.files?.[0];
       if (!file) return;
-      if (!/^video\//.test(file.type)) {
-        showError(new Error("Choose a supported video file."));
+      if (
+        dirty &&
+        !confirm(
+          "Discard unsaved annotation form changes to attach this recording?",
+        )
+      )
         return;
-      }
-      if (file.size > 2_000_000_000) {
-        showError(
-          new Error("Use a clip smaller than 2 GB for this browser pilot."),
-        );
-        return;
-      }
-      if (mediaURL) URL.revokeObjectURL(mediaURL);
-      mediaURL = URL.createObjectURL(file);
-      mediaName = file.name;
-      mediaSession = activeSession()!.id;
-      const next = structuredClone(data),
-        s = next.sessions.find((s) => s.id === mediaSession)!;
-      s.evidenceKind = "local-file";
-      s.evidenceRef = "";
-      s.mediaId = s.mediaId || uid();
+      const snapshot = data,
+        session = activeSession()!,
+        activeMode = mode;
+      let preparedURL = "";
+      videoFile.disabled = true;
       try {
+        const prepared = await prepareLocalVideo(file, session.durationSeconds);
+        preparedURL = prepared.url;
+        if (
+          data !== snapshot ||
+          mode !== activeMode ||
+          activeSession()?.id !== session.id
+        )
+          throw new Error(
+            "The workspace changed while the recording was checked. Select the recording again.",
+          );
+        const next = structuredClone(data),
+          s = next.sessions.find((s) => s.id === session.id)!;
+        s.evidenceKind = "local-file";
+        s.evidenceRef = "";
+        s.mediaId = s.mediaId || uid();
         save(
           next,
-          "Recording attached locally. Only an opaque file reference is saved; reattach after reload.",
+          prepared.durationStatus === "matched"
+            ? "Recording attached locally after duration validation. No video bytes were saved or uploaded."
+            : "Recording attached locally. This clip has no finite duration metadata; verify the stated session duration manually. No video bytes were saved or uploaded.",
         );
+        if (mediaURL) URL.revokeObjectURL(mediaURL);
+        mediaURL = preparedURL;
+        preparedURL = "";
+        mediaName = file.name;
+        mediaSession = session.id;
         render();
-        const p = document.querySelector<HTMLVideoElement>("#player")!;
-        p.onerror = () =>
-          showError(
-            new Error(
-              "This browser cannot play the recording. Try a supported MP4 or WebM codec.",
-            ),
-          );
-        p.onloadedmetadata = () => {
-          if (
-            Number.isFinite(p.duration) &&
-            Math.abs(p.duration - s.durationSeconds) > 1
-          ) {
-            showError(
-              new Error(
-                `Clip duration is ${p.duration.toFixed(2)}s; the session states ${s.durationSeconds}s. Record a new session with the correct duration before annotating.`,
-              ),
-            );
-          }
-        };
       } catch (e) {
         showError(e);
+      } finally {
+        if (preparedURL) URL.revokeObjectURL(preparedURL);
+        videoFile.disabled = false;
+        videoFile.value = "";
       }
     };
+  const player = document.querySelector<HTMLVideoElement>("#player");
+  if (player)
+    player.onerror = () =>
+      showError(
+        new Error(
+          "Recording playback failed. Try a supported MP4 or WebM codec. Check the evidence before annotating.",
+        ),
+      );
   const importFile = document.querySelector<HTMLInputElement>("#import-file");
   if (importFile)
     importFile.onchange = async () => {
@@ -842,6 +856,8 @@ function wire() {
         selectedSession = "";
         selectedEvent = "";
         draftStudy = null;
+        analysisConfiguration = "all";
+        clearMedia();
         render();
       } catch (e) {
         showError(e);
@@ -1137,14 +1153,50 @@ async function action(name: string) {
           "Erase all local pilot records from this browser? Exported backups and original video files are unaffected.",
         )
       ) {
-        localStorage.removeItem(LOCAL_KEY);
-        local = { data: emptyDataset() };
+        eraseLocal();
+        clearMedia();
+        local = loadLocal();
         data = local.data;
         draftStudy = null;
         dirty = false;
+        pendingReceipt = null;
+        selectedSession = selectedEvent = "";
+        analysisConfiguration = "all";
         setStatus("All local pilot records erased.");
         render();
       }
+    } else if (name === "recover-local") {
+      download(
+        "private-local-storage-recovery.txt",
+        localStorage.getItem(LOCAL_KEY) ?? "",
+        "text/plain",
+      );
+      setStatus(
+        "Raw saved storage downloaded for private recovery. It may contain sensitive text and is not a validated export.",
+      );
+      render();
+    } else if (name === "reload-local") {
+      if (
+        dirty &&
+        !confirm(
+          "Discard this tab’s unsaved form changes and reload saved records?",
+        )
+      )
+        return;
+      clearMedia();
+      local = loadLocal();
+      data = local.data;
+      draftStudy = null;
+      selectedEvent = selectedSession = "";
+      dirty = false;
+      pendingReceipt = null;
+      analysisConfiguration = "all";
+      if (local.error) showError(new Error(local.error));
+      else
+        setStatus(
+          "Saved local records reloaded. Other tabs may still hold older snapshots.",
+        );
+      render();
     } else if (name === "disconnect") {
       collection = null;
       serverRows = [];
@@ -1214,6 +1266,14 @@ window.addEventListener("beforeunload", (e) => {
     e.preventDefault();
     e.returnValue = "";
   }
+});
+window.addEventListener("storage", (event) => {
+  if (mode === "local" && (event.key === LOCAL_KEY || event.key === null))
+    showError(
+      new Error(
+        "Local records changed in another tab. This tab has kept its snapshot. Export it if needed, then use Dataset & exports → Reload saved local records before saving.",
+      ),
+    );
 });
 window.addEventListener("keydown", (e) => {
   if ((e.target as HTMLElement).matches("input,textarea,select")) return;

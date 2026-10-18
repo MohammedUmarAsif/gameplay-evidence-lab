@@ -15,3 +15,4 @@ recordings/
 supabase/.temp/
 supabase/.branches/
 proposal-preservation.json
+.serena/

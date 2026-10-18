@@ -71,6 +71,7 @@ Public recruitment is disabled regardless of whether a demo is deployed. Institu
 - `src/domain.ts`: strict schemas and relationship validation shared with backend.
 - `src/main.ts`: static-compatible task views and local workflow.
 - `src/exports.ts`: checked JSON, checksum manifest, related CSVs and dictionary.
+- `src/analytics.ts`: reproducible descriptive counts, interval-union coverage and ordinal distributions; see [definitions](docs/DESCRIPTIVE_SUMMARIES.md).
 - `src/demo.ts`: visibly synthetic examples.
 - `src/backend.ts`: explicit authenticated private-collection adapter.
 - `backend/validation.ts`: server collection gates.

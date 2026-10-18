@@ -1014,7 +1014,7 @@ details[open] > summary {
   }
   .sidebar nav a {
     font-size: 11px;
-    min-height: 36px;
+    min-height: 44px;
     padding: 6px 9px;
   }
   .sidebar nav a[aria-current] {
@@ -1223,5 +1223,66 @@ details[open] > summary {
     scroll-behavior: auto !important;
     transition: none !important;
     animation: none !important;
+  }
+}
+.count-chart {
+  margin: 20px 0;
+}
+.count-chart > div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+.count-chart dt {
+  font-weight: 500;
+  font-size: 13px;
+}
+.count-chart dd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+.chart-track {
+  height: 10px;
+  background: #e7edeb;
+  display: block;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.chart-track > span {
+  height: 100%;
+  display: block;
+  background: #14685d;
+}
+.rating-charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 24px;
+}
+.rating-chart > div {
+  grid-template-columns: 60px minmax(0, 1fr);
+  gap: 8px;
+}
+@media (max-width: 1100px) {
+  .rating-charts {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+@media (max-width: 400px) {
+  .count-chart > div {
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .count-chart dd {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 6px;
   }
 }
