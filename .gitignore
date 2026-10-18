@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+private-data/
+recordings/
+*.mp4
+*.webm
+*.mov
+*.log
+.supabase/
+supabase/.temp/
+supabase/.branches/
+proposal-preservation.json

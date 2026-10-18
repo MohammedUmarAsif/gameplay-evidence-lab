@@ -1,0 +1,5 @@
+project_id = "gameplay-evidence-lab"
+
+[functions.evidence-api]
+verify_jwt = false
+# JWTs are verified with auth.getUser in the function. Never remove that verification.

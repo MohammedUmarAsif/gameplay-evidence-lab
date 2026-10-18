@@ -1,0 +1,17 @@
+{
+  "id": "personal-pilot-template",
+  "title": "Personal gameplay pilot",
+  "protocolVersion": "pilot-1",
+  "consentVersion": "pilot-info-1",
+  "question": "How can timestamped observations and configuration records support reliable interaction annotation?",
+  "inclusion": "Adult researcher documenting their own permitted gameplay; no participant recruitment.",
+  "measures": "Event intervals, action completion, reported experience, missingness and annotation effort.",
+  "permittedMediaUse": "Local annotation only. Optional reuse and ML processing require separate permission.",
+  "retention": "Personal pilot: retain on this device until manually deleted; export backups under your control.",
+  "deletion": "Delete sessions in the workspace and remove exported backups separately. Local files are never deleted by this app.",
+  "contact": "",
+  "informationText": "Draft personal-pilot information, not an institution-approved consent instrument. Participation is optional. Local data stays in this browser until you export or explicitly submit it. Do not include names, chat logs, voices or third-party identities without permission.",
+  "reviewStatus": "not-reviewed",
+  "publicRecruitment": false,
+  "createdAt": "2026-10-18T00:00:00.000Z"
+}

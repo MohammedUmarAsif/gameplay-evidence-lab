@@ -1,0 +1,869 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "instrumentVersion": {
+      "type": "string",
+      "const": "0.1.0"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "synthetic",
+        "local",
+        "submitted"
+      ]
+    },
+    "datasetId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "studies": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "protocolVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "consentVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "inclusion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "measures": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "permittedMediaUse": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "retention": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "deletion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "contact": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "informationText": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "reviewStatus": {
+            "type": "string",
+            "enum": [
+              "not-reviewed",
+              "researcher-configured"
+            ]
+          },
+          "publicRecruitment": {
+            "type": "boolean",
+            "const": false
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "protocolVersion",
+          "consentVersion",
+          "question",
+          "inclusion",
+          "measures",
+          "permittedMediaUse",
+          "retention",
+          "deletion",
+          "contact",
+          "informationText",
+          "reviewStatus",
+          "publicRecruitment",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "configurations": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "studyId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "equipment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "properties": {
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "self-reported",
+                    "model-inferred",
+                    "unknown"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                }
+              },
+              "required": [
+                "name",
+                "value",
+                "unit",
+                "status",
+                "source"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "studyId",
+          "label",
+          "equipment",
+          "properties",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "sessions": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "studyId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "configurationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "participantId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "groupId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "game": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "gameVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "platform": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "experience": {
+            "type": "string",
+            "enum": [
+              "new",
+              "some",
+              "experienced",
+              "unknown",
+              "not-applicable"
+            ]
+          },
+          "encounter": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "conditions": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "durationSeconds": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 86400
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "own-play",
+              "participant-play",
+              "simulation",
+              "authorised-external",
+              "synthetic-example"
+            ]
+          },
+          "evidenceKind": {
+            "type": "string",
+            "enum": [
+              "none",
+              "local-file",
+              "private-reference"
+            ]
+          },
+          "evidenceRef": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": ""
+              },
+              {
+                "type": "string",
+                "maxLength": 1200,
+                "format": "uri"
+              }
+            ]
+          },
+          "mediaId": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "consent": {
+            "type": "object",
+            "properties": {
+              "adultConfirmed": {
+                "type": "boolean",
+                "const": true
+              },
+              "participation": {
+                "type": "boolean",
+                "const": true
+              },
+              "mediaReuse": {
+                "type": "boolean"
+              },
+              "mlProcessing": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "recordedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "adultConfirmed",
+              "participation",
+              "mediaReuse",
+              "mlProcessing",
+              "version",
+              "recordedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "studyId",
+          "configurationId",
+          "participantId",
+          "groupId",
+          "game",
+          "gameVersion",
+          "platform",
+          "experience",
+          "encounter",
+          "conditions",
+          "durationSeconds",
+          "source",
+          "evidenceKind",
+          "evidenceRef",
+          "mediaId",
+          "createdAt",
+          "consent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "maxItems": 2000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "startSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "endSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "components": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "outcome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "self-reported",
+              "model-inferred",
+              "unknown"
+            ]
+          },
+          "verification": {
+            "type": "string",
+            "enum": [
+              "unreviewed",
+              "verified",
+              "uncertain"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "annotationVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "startSeconds",
+          "endSeconds",
+          "label",
+          "components",
+          "outcome",
+          "note",
+          "provenance",
+          "verification",
+          "source",
+          "annotationVersion",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "feedback": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "eventId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[a-zA-Z0-9_-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "intendedAction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "occurred": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "control": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enjoyment": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "suggestion": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "instrument": {
+            "type": "string",
+            "const": "custom-pilot-v1"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "eventId",
+          "intendedAction",
+          "occurred",
+          "control",
+          "difficulty",
+          "enjoyment",
+          "suggestion",
+          "instrument",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "comparisons": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "sessionA": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "sessionB": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "factorChanged": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "observational-human",
+              "controlled-simulation"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "startingStateRef": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "seedRef": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "controllerRef": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "outcomeNotes": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "sessionA",
+          "sessionB",
+          "factorChanged",
+          "kind",
+          "order",
+          "startingStateRef",
+          "seedRef",
+          "controllerRef",
+          "outcomeNotes",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "reviews": {
+      "maxItems": 2000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "eventId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "reviewerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "originalLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "correctedLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "uncertain",
+              "excluded"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "annotationVersion": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 10000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "eventId",
+          "reviewerId",
+          "originalLabel",
+          "correctedLabel",
+          "status",
+          "notes",
+          "annotationVersion",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "predictions": {
+      "maxItems": 2000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "eventId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "modelVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "proposedLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "startSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "endSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limitations": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "verification": {
+            "type": "string",
+            "const": "unreviewed"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "eventId",
+          "model",
+          "modelVersion",
+          "prompt",
+          "proposedLabel",
+          "startSeconds",
+          "endSeconds",
+          "confidence",
+          "limitations",
+          "verification",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "instrumentVersion",
+    "origin",
+    "datasetId",
+    "createdAt",
+    "studies",
+    "configurations",
+    "sessions",
+    "events",
+    "feedback",
+    "comparisons",
+    "reviews",
+    "predictions"
+  ],
+  "additionalProperties": false
+}

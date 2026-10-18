@@ -1,0 +1,68 @@
+# Verification evidence
+
+Verified locally on 18 October 2026. These are software/instrument checks, not gameplay findings or evidence of PhD novelty.
+
+## Scope preservation
+
+Read the build prompt and current AGENTS, CURRENT_DIRECTION, START_HERE, ISE2_RESEARCH_TEXT, METHOD_AND_DEFENCE and LITERATURE_MATRIX before implementation. Created a separate sibling project with its own Git repository. A baseline comparison of all 36 files at the application-pack root found **zero changes**.
+
+The submitted/current `ISE_2_Mohammed_Umar_Sayed.docx` SHA-256 remained:
+
+`0DDCA4B0C3DF8256953703498B3C3AB3656E6A586ABC3091CA0D5D15CF268A51`
+
+No application document was edited, copied into the public frontend, or submitted. No person was contacted and no participant recruitment or paid provisioning was enabled.
+
+## Completed checks
+
+| Check | Observed result |
+|---|---|
+| `npm run check` | TypeScript passed |
+| `npm test` | 24 tests passed |
+| `npm run build` | Static production build passed |
+| `npm run test:e2e` | 12 tests passed across desktop and mobile Chromium projects |
+| `npm run test:backend` | Explicitly skipped: no disposable hosted backend/test accounts configured |
+| Deno check of evidence-api with its pinned import map | Passed |
+| `npm audit --omit=dev` | Zero reported production dependency vulnerabilities at check time |
+| Build-output scan for service-role/secret-key/private-key patterns | No matches in generated dist |
+| Proposal root-file hash comparison | 36 files checked; zero changes |
+
+The build emits upstream Primer `@custom-media` warnings. The app's responsive rules use standard media queries; all tested layouts/workflows pass. No claim is made that every upstream CSS feature is supported by every browser.
+
+## Browser evidence
+
+Desktop viewport: 1440×1000. Mobile: iPhone-13-sized Chromium emulation, 390×664 CSS viewport as supplied by Playwright's device preset. Additional width checks at 320px. This is not a real iOS/Safari device test.
+
+- Created an empty private-local study and session, requiring active adult/information choices; optional permissions remained unchecked.
+- Rejected an invalid event interval; accepted a valid interval.
+- Recorded neutral feedback with unanswered ratings preserved as null.
+- Appended a review and retained the original label.
+- Exported/reimported JSON with relationships and checksum validated; reloaded local drafts.
+- Deleted a session and confirmed linked events/feedback/reviews disappeared.
+- Rejected importing synthetic data into the real-local workspace.
+- Filtered synthetic summaries by configuration, including missing feedback and explicit denominators. Whole-workspace export is clearly labelled.
+- Chose and played a generated disposable synthetic video; mark controls worked; no upload or external request occurred.
+- Confirmed central submission is disabled when unconfigured.
+- Checked all ten routes with axe WCAG 2 A/AA and 2.1 AA rules on both desktop and mobile; zero detected violations after fixes. Automated scanning is not a complete accessibility certification.
+- Verified keyboard skip link/focus and hash direct navigation.
+- Served the real build under `/test-repository/`; assets, direct review navigation and reload worked.
+- Fixed a 320px overflow caused by an absolutely positioned accessible table header; contained it correctly. Mobile session cards expose actions without horizontal table scrolling.
+
+Synthetic-only screenshots: `screenshots/synthetic-desktop.png`, `screenshots/synthetic-mobile.png`. They show instrument fixtures, not participant data or research results.
+
+## Data and security evidence
+
+Domain tests reject invalid intervals, orphan links, duplicated IDs, extra identity fields, non-finite values, origin mixing, wrong consent versions, unsafe/signed evidence URLs, unreviewed machine promotion, controlled-human pair claims and invalid review histories. They also check CSV injection protection, empty table headers, JSON tamper detection, linked deletion and split grouping.
+
+Study contacts are removed from JSON/CSV exports without mutating local data. Used study information cannot be silently rewritten through the editor. Raw reports and reviews remain separate. Build configuration rejects secret-like public variables and service/admin-role keys. The private adapter rejects false persistence responses and makes offline uncertainty explicit.
+
+The actual SQL migration executed in isolated PostgreSQL/PGlite, using test auth-role/UID fixtures. Verified anonymous read denial, owner read, cross-user denial, direct browser write/secret-column denial, researcher read, researcher-only review, review-version conflict, idempotent retry, owner/code withdrawal, rejection of withdrawn IDs, daily limits surviving withdrawal, expiry visibility and purge. This is stronger than inspecting SQL text, but it does not test hosted Supabase Auth, CORS, infrastructure or operator configuration.
+
+## Deployment status and remaining work
+
+GitHub Pages workflow is prepared with immutable action commit references checked against official action repositories, least necessary job permissions, tests, a production build and central collection forced off. Relative assets and repository-subpath navigation were tested locally.
+
+**No remote repository or Pages deployment has been claimed.** The brief requires a target-repository choice after the prototype is reviewable; that choice is pending. After it is supplied, create/use that repository, enable workflow-based Pages, push only reviewed source/synthetic fixtures, inspect CI and verify the live URL and modes.
+
+Private central collection remains unavailable. Missing: selected backend project, server secrets, migration/function deployment, study/operator details, invited accounts, retention scheduler and passing hosted access tests. Manual session-token entry is an invited technical-pilot facility, not a finished participant identity system. Appropriate institutional and security review remain necessary before participant collection.
+
+The prototype has not tested real gameplay datasets, model accuracy, inter-rater reliability, population preference, causal mechanic effects or industry usefulness. Those require separately designed studies and permissions.

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "units": {
+    "sessions.durationSeconds": "seconds",
+    "events.startSeconds": "seconds from clip/session start",
+    "events.endSeconds": "seconds, exclusive interval end",
+    "configurations.properties.value": "numeric or null; unit required per property",
+    "feedback.control": "1 very little to 5 very much; null = not answered",
+    "feedback.difficulty": "1 very easy to 5 very difficult; null = not answered",
+    "feedback.enjoyment": "1 not at all to 5 very much; null = not answered",
+    "predictions.confidence": "0 to 1 model-reported score, NOT calibrated probability"
+  },
+  "tables": {
+    "studies": "id PK; protocolVersion and consentVersion identify information shown; publicRecruitment is always false.",
+    "configurations": "id PK; studyId FK studies.id; equipment is raw description; properties contain units, source and observation status.",
+    "sessions": "id PK; studyId FK; configurationId FK; participantId pseudonym; groupId episode/source grouping; consent is the recorded choice, not proof of institutional approval. mediaId is a local opaque reference, never video bytes.",
+    "events": "id PK; sessionId FK; label/outcome/note are original observations; components are researcher-supplied typed strings. Intervals must lie inside sessions. annotationVersion stays 1.",
+    "feedback": "id PK; sessionId FK; optional eventId FK within that session. Custom pilot questions, not a validated psychological scale. Raw text is never paraphrased.",
+    "comparisons": "id PK; sessionA/sessionB FK. Human observations do not establish identical states or causal effects. Controlled simulations require state/seed/controller references.",
+    "reviews": "id PK; eventId FK; append-only originalLabel/correctedLabel, decision, notes, timestamp and consecutive annotationVersion. Latest version is a reviewed label, not a replacement raw report.",
+    "predictions": "id PK; eventId FK; separate imported machine suggestion with model/version/prompt/interval/limitations. Always unreviewed; ML permission required.",
+    "split_groups": "Connected sessions sharing a participant, source group or comparison pair. Keep entire leakageGroup together. Partition is intentionally unassigned; this is not a validated train/test split."
+  },
+  "limitations": [
+    "No hidden engine telemetry is inferred.",
+    "Own-play and convenience samples do not represent a population.",
+    "Synthetic data are never empirical findings.",
+    "Exports contain free text and may contain private evidence references. Review them before sharing. No contact/account fields or video bytes are included."
+  ]
+}
