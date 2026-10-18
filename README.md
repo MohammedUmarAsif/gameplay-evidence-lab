@@ -2,6 +2,10 @@
 
 A working, local-first research instrument for gameplay configurations, timestamped annotation, neutral feedback, append-only review, and validated dataset export. RPG-general; the shipped examples use a fictional RPG and are entirely synthetic.
 
+**[Open the live research instrument](https://mohammedumarasif.github.io/gameplay-evidence-lab/)** · [Source repository](https://github.com/MohammedUmarAsif/gameplay-evidence-lab) · [First personal pilot](docs/FIRST_PILOT.md)
+
+The published build starts with synthetic examples and keeps central collection disabled. Private local pilot records belong to the current browser profile and site origin: records saved at localhost do not automatically appear on GitHub Pages. Transfer a private validated JSON export through the local-pilot import only if needed. No video bytes or local records are published with the site.
+
 Supports the proposed theme **Multimodal Learning of RPG System Interactions for Evidence-Based Game Design**. This prototype prepares evidence; it does not implement the relational predictor or establish scientific novelty, causal effects, institutional approval or industry participation.
 
 ## Run
@@ -55,6 +59,8 @@ Tests cover validation, integrity and origin-safe JSON round trips, CSV safety, 
 The optional `npm run test:backend` command checks a deliberately configured disposable hosted backend. See its prerequisites before use. No configured backend means that check is explicitly skipped. Evidence and outstanding limits are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
 ## GitHub Pages
+
+Published and checked on 19 October 2026 (Asia/Bahrain). Run `npm run verify:live` after a deployment to check all ten routes at 1440px, 390px and 320px, direct reload, origin isolation, disabled collection and unexpected requests. This uses a fresh isolated Chromium profile; it does not read your pilot records. The generated report and synthetic screenshots stay in ignored `test-results/live/`.
 
 The included `.github/workflows/pages.yml` validates, builds and browser-tests before deploying `dist/`. Enable **Settings → Pages → GitHub Actions** on the chosen repository. The default published build forces central collection off. Only source and synthetic examples belong in Git. Never commit real exports, videos, session tokens or private study records.
 
