@@ -191,6 +191,9 @@ test("mobile/desktop accessible layouts, keyboard navigation and hash direct nav
     "dataset",
     "collection",
     "method",
+    "explorer",
+    "learning",
+    "roadmap",
   ]) {
     await page.goto(`/#${route}`);
     await expect(page.locator("h1")).toBeVisible();
@@ -206,6 +209,10 @@ test("mobile/desktop accessible layouts, keyboard navigation and hash direct nav
     expect(results.violations, `${route} accessibility violations`).toEqual([]);
   }
   await page.goto("/");
+  await page.screenshot({
+    path: `docs/screenshots/field-workspace-${testInfo.project.name}.png`,
+    fullPage: false,
+  });
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Skip to working area" }),
@@ -346,6 +353,9 @@ test("320px workspace and dataset do not overflow", async ({ page }) => {
     "sessions",
     "annotate",
     "review",
+    "explorer",
+    "learning",
+    "roadmap",
   ]) {
     await page.goto(`/#${route}`);
     const size = await page.evaluate(() => ({
@@ -374,6 +384,120 @@ test("320px workspace and dataset do not overflow", async ({ page }) => {
       `${route}: ${JSON.stringify(size)}`,
     ).toBe(true);
   }
+});
+
+test("baseline lab refuses sparse evidence, runs synthetic grouped evaluation and exports its provenance", async ({
+  page,
+}, testInfo) => {
+  const writes: string[] = [];
+  page.on("request", (r) => {
+    if (r.method() !== "GET") writes.push(r.url());
+  });
+  await page.goto("/#learning");
+  await page
+    .getByRole("button", { name: "Run fixed baseline", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("3 independent");
+  page.once("dialog", (d) => d.accept());
+  await page
+    .getByRole("button", { name: "Load synthetic benchmark", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Run fixed baseline", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Experiment readout" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("18 train / 6 test events", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "100.0%", exact: true }),
+  ).toBeVisible();
+  const scan = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(scan.violations).toEqual([]);
+  await page.screenshot({
+    path: `docs/screenshots/field-lab-${testInfo.project.name}.png`,
+    fullPage: true,
+  });
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export experiment JSON" }).click();
+  const file = await downloading,
+    report = JSON.parse(await readFile((await file.path())!, "utf8"));
+  expect(report.origin).toBe("synthetic");
+  expect(report.sourceDatasetSHA256).toMatch(/^[a-f0-9]{64}$/);
+  expect(
+    report.split.trainGroups.some((g: string) =>
+      report.split.testGroups.includes(g),
+    ),
+  ).toBe(false);
+  await page
+    .getByRole("button", { name: "Private local pilot", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "No experiment run" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Load synthetic benchmark" }),
+  ).toHaveCount(0);
+  expect(writes).toEqual([]);
+});
+
+test("interaction atlas filters evidence and preserves a route to review", async ({
+  page,
+}) => {
+  await page.goto("/#explorer");
+  await page
+    .getByLabel("Search components, labels or outcomes")
+    .fill("committed-attack");
+  await page
+    .getByRole("button", { name: "Explore evidence", exact: true })
+    .click();
+  await expect(page.locator(".event-list article")).toHaveCount(1);
+  await expect(page.locator(".event-list")).toContainText("Attack interrupted");
+  await page.getByRole("button", { name: "Review", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Researcher review", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("link", { name: "Interaction atlas", exact: true })
+    .click();
+  await page.getByLabel("Latest human review must be verified").check();
+  await page
+    .getByRole("button", { name: "Explore evidence", exact: true })
+    .click();
+  await expect(page.locator(".event-list article")).toHaveCount(0);
+});
+
+test("Wilds pilot starter creates only an editable local draft and leaves optional consent unselected", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Plan a Wilds pilot" }).click();
+  await expect(page.locator(".origin-bar strong")).toHaveText(
+    "Private local pilot",
+  );
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(
+          localStorage.getItem("gameplay-evidence-lab:local:v1") ??
+            '{"studies":[]}',
+        ).studies.length,
+    ),
+  ).toBe(0);
+  await page.getByRole("button", { name: "Save study", exact: true }).click();
+  await page.getByRole("link", { name: "Sessions", exact: true }).click();
+  await expect(page.getByLabel("Game title", { exact: true })).toHaveValue(
+    "Monster Hunter Wilds",
+  );
+  await expect(
+    page.getByLabel("Optional: permit ML-assisted processing", {
+      exact: false,
+    }),
+  ).not.toBeChecked();
 });
 
 test("descriptive charts keep origins, denominators, missing ratings and filtered scope explicit", async ({

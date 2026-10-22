@@ -15,8 +15,17 @@ import {
 } from "../src/domain";
 import { csv, exportEnvelope, exportZip, importEnvelope } from "../src/exports";
 import { validatePublicEnvironment } from "../build/public-config";
+import { PGlite } from "@electric-sql/pglite";
+import { readFile } from "node:fs/promises";
 import { describeDataset, intervalUnion } from "../src/analytics";
 import { checkRecordingDuration } from "../src/media";
+import { benchmarkDemo } from "../src/benchmark-demo";
+import {
+  runBaseline,
+  eligibleExamples,
+  fitBernoulli,
+  scorePredictions,
+} from "../src/learning";
 import { loadLocal, saveLocal, eraseLocal, LOCAL_KEY } from "../src/storage";
 
 test("synthetic example has valid references, explicit missingness and correct origin", () => {
@@ -407,5 +416,160 @@ test("stale local snapshots cannot overwrite or erase newer saved records", () =
     if (descriptor)
       Object.defineProperty(globalThis, "localStorage", descriptor);
     else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
+test("baseline metrics match a hand-calculated confusion matrix and penalise unseen classes", () => {
+  const score = scorePredictions(["A", "A", "B", "B"], ["A", "A", "B", "C"]);
+  assert.equal(score.accuracy, 0.75);
+  assert.deepEqual(score.matrix, [
+    [2, 0, 0],
+    [0, 1, 1],
+    [0, 0, 0],
+  ]);
+  assert.ok(Math.abs(score.macroF1 - 5 / 9) < 1e-10);
+  assert.throws(() => scorePredictions([], []));
+});
+
+test("Bernoulli classifier uses presence and absence with deterministic ties and training-only vocabulary", () => {
+  const train = ["A", "A", "B", "B"].map((target, i) => ({
+    eventId: String(i),
+    sessionId: "s",
+    group: "g",
+    target,
+    features: [target === "A" ? "condition:clear" : "condition:strike"],
+  }));
+  const model = fitBernoulli(train);
+  assert.equal(model.predict(["condition:clear"]), "A");
+  assert.equal(model.predict(["condition:strike"]), "B");
+  assert.equal(model.predict([]), "A");
+  assert.equal(model.predict(["condition:unknown"]), "A");
+  assert.equal(model.majority, "A");
+});
+
+test("baseline bounds the target taxonomy before constructing a confusion matrix", () => {
+  const data = benchmarkDemo();
+  data.reviews.forEach((r, i) => (r.correctedLabel = `class-${i}`));
+  assert.throws(() => runBaseline(data, data.studies[0].id), /20 classes/);
+  const labels = Array.from({ length: 21 }, (_, i) => `class-${i}`);
+  assert.throws(() => scorePredictions(labels, labels), /20 classes/);
+});
+
+test("synthetic benchmark is reproducible, grouped and explicitly separate from gameplay findings", () => {
+  const data = benchmarkDemo(),
+    result = runBaseline(data, data.studies[0].id);
+  assert.deepEqual(data, benchmarkDemo());
+  assert.equal(result.origin, "synthetic");
+  assert.equal(result.eligible, 24);
+  assert.equal(result.trainRows, 18);
+  assert.equal(result.testRows, 6);
+  assert.equal(result.model.accuracy, 1);
+  assert.equal(result.majority.accuracy, 0.5);
+  assert.ok(
+    result.split.trainGroups.every((g) => !result.split.testGroups.includes(g)),
+  );
+  assert.deepEqual(result, runBaseline(data, data.studies[0].id));
+});
+
+test("baseline refuses a single player, mixed game versions and insufficient reviewed evidence", () => {
+  const initial = demoDataset();
+  assert.throws(
+    () => runBaseline(initial, initial.studies[0].id),
+    /8 eligible/,
+  );
+  const one = benchmarkDemo();
+  one.sessions.forEach((s) => (s.participantId = "same-player"));
+  assert.throws(() => runBaseline(one, one.studies[0].id), /3 independent/);
+  const mixed = benchmarkDemo();
+  mixed.sessions[0].gameVersion = "different-version";
+  assert.throws(
+    () => runBaseline(mixed, mixed.studies[0].id),
+    /single game and version/,
+  );
+});
+
+test("ML permission, observed provenance and latest verified review determine eligibility", () => {
+  const data = benchmarkDemo();
+  data.sessions[0].consent.mlProcessing = false;
+  data.events[6].provenance = "self-reported";
+  const event = data.events[7];
+  data.reviews.push({
+    ...data.reviews[7],
+    id: "excluded-review",
+    eventId: event.id,
+    status: "excluded",
+    annotationVersion: 3,
+  });
+  assert.equal(eligibleExamples(data, data.studies[0].id).length, 16);
+});
+
+test("held-out-only tokens never enter fitted vocabulary; notes and outcomes are not predictors", () => {
+  const data = benchmarkDemo(),
+    initial = runBaseline(data, data.studies[0].id);
+  const testId = initial.split.testEventIds[0];
+  data.events
+    .find((e) => e.id === testId)!
+    .components.push("condition:test-only");
+  data.events.forEach((e) => {
+    e.note = "arbitrary label leak";
+    e.outcome = "changed after the outcome";
+  });
+  const changed = runBaseline(data, data.studies[0].id);
+  assert.ok(!changed.features.includes("condition:test-only"));
+  assert.deepEqual(
+    changed.predictions.map((p) => p.predicted),
+    initial.predictions.map((p) => p.predicted),
+  );
+  assert.ok(
+    changed.predictions
+      .find((p) => p.eventId === testId)!
+      .unknownFeatures.includes("condition:test-only"),
+  );
+});
+
+test("SQL aggregates child tables before joining and separates missing feedback from missing ratings", async () => {
+  const data = demoDataset();
+  data.feedback.push({
+    ...data.feedback[0],
+    id: "repeat-feedback",
+    enjoyment: 5,
+  });
+  const db = new PGlite();
+  try {
+    await db.exec("CREATE TABLE pilot_dataset(payload jsonb NOT NULL)");
+    await db.query("INSERT INTO pilot_dataset VALUES ($1::jsonb)", [
+      JSON.stringify(data),
+    ]);
+    const query = await readFile(
+      new URL("../analysis/pilot-summary.sql", import.meta.url),
+      "utf8",
+    );
+    const result = await db.query(query);
+    assert.deepEqual(result.rows, [
+      {
+        configuration_id: "demo-a",
+        configuration_label: "Configuration A",
+        sessions: 1,
+        events: 1,
+        verified_events: 0,
+        feedback_records: 2,
+        missing_enjoyment_responses: 1,
+        sessions_without_events: 0,
+        sessions_without_feedback: 0,
+      },
+      {
+        configuration_id: "demo-b",
+        configuration_label: "Configuration B",
+        sessions: 1,
+        events: 1,
+        verified_events: 0,
+        feedback_records: 0,
+        missing_enjoyment_responses: 0,
+        sessions_without_events: 0,
+        sessions_without_feedback: 1,
+      },
+    ]);
+  } finally {
+    await db.close();
   }
 });
