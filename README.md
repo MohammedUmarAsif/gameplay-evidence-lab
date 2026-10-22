@@ -1,6 +1,8 @@
-# Gameplay Evidence Lab
+# Hunter’s Field Lab
 
 A working, local-first research instrument for gameplay configurations, timestamped annotation, neutral feedback, append-only review, and validated dataset export. RPG-general; the shipped examples use a fictional RPG and are entirely synthetic.
+
+An independent Monster Hunter-inspired expedition journal, built on the Gameplay Evidence Lab data format. **Plan a Wilds pilot** prepares an editable personal study draft. **Interaction atlas** searches component co-occurrence and returns to the source observations. **Baseline lab** runs a local Bernoulli Naive Bayes experiment against a majority-class comparator, with group holdout and inspectable errors. [System assessment](docs/SYSTEM_REVIEW.md) explains what each system solves and the next meaningful upgrade; [baseline methods](docs/BASELINE_LAB.md) document what the experiment can and cannot show.
 
 **[Open the live research instrument](https://mohammedumarasif.github.io/gameplay-evidence-lab/)** · [Source repository](https://github.com/MohammedUmarAsif/gameplay-evidence-lab) · [First personal pilot](docs/FIRST_PILOT.md)
 
@@ -60,7 +62,7 @@ The optional `npm run test:backend` command checks a deliberately configured dis
 
 ## GitHub Pages
 
-Published and checked on 19 October 2026 (Asia/Bahrain). Run `npm run verify:live` after a deployment to check all ten routes at 1440px, 390px and 320px, direct reload, origin isolation, disabled collection and unexpected requests. This uses a fresh isolated Chromium profile; it does not read your pilot records. The generated report and synthetic screenshots stay in ignored `test-results/live/`.
+First published on 19 October 2026; field-journal and analysis upgrade on 22 October 2026 (Asia/Bahrain). Run `npm run verify:live` after a deployment to check all thirteen routes at 1440px, 390px and 320px, direct reload, origin isolation, disabled collection and unexpected requests. This uses a fresh isolated Chromium profile; it does not read your pilot records. The generated report and synthetic screenshots stay in ignored `test-results/live/`.
 
 The included `.github/workflows/pages.yml` validates, builds and browser-tests before deploying `dist/`. Enable **Settings → Pages → GitHub Actions** on the chosen repository. The default published build forces central collection off. Only source and synthetic examples belong in Git. Never commit real exports, videos, session tokens or private study records.
 

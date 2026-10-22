@@ -1,12 +1,12 @@
 # Verification evidence
 
-Verified locally on 18 October 2026. These are software/instrument checks, not gameplay findings or evidence of PhD novelty.
+Initial verification on 18 October 2026; field-journal and analysis upgrade checked on 22 October 2026. These are software/instrument checks, not gameplay findings or evidence of PhD novelty. Earlier dated deployment/check records below are retained as history.
 
 ## Scope preservation
 
 Read the build prompt and current AGENTS, CURRENT_DIRECTION, START_HERE, ISE2_RESEARCH_TEXT, METHOD_AND_DEFENCE and LITERATURE_MATRIX before implementation. Created a separate sibling project with its own Git repository. A baseline comparison of all 36 files at the application-pack root found **zero changes**.
 
-The submitted/current `ISE_2_Mohammed_Umar_Sayed.docx` SHA-256 remained:
+The initial 18 October working `ISE_2_Mohammed_Umar_Sayed.docx` SHA-256 was preserved during that build:
 
 `0DDCA4B0C3DF8256953703498B3C3AB3656E6A586ABC3091CA0D5D15CF268A51`
 
@@ -17,9 +17,9 @@ No application document was edited, copied into the public frontend, or submitte
 | Check | Observed result |
 |---|---|
 | `npm run check` | TypeScript passed |
-| `npm test` | 30 tests passed |
+| `npm test` | 38 tests passed on 22 October |
 | `npm run build` | Static production build passed |
-| `npm run test:e2e` | 20 tests passed across desktop and mobile Chromium projects |
+| `npm run test:e2e` | 26 tests passed across desktop and mobile Chromium projects on 22 October |
 | `npm run test:backend` | Explicitly skipped: no disposable hosted backend/test accounts configured |
 | Deno check of evidence-api with its pinned import map | Passed |
 | `npm audit --omit=dev` | Zero reported production dependency vulnerabilities at check time |
@@ -67,7 +67,19 @@ Study contacts are removed from JSON/CSV exports without mutating local data. Us
 
 The actual SQL migration executed in isolated PostgreSQL/PGlite, using test auth-role/UID fixtures. Verified anonymous read denial, owner read, cross-user denial, direct browser write/secret-column denial, researcher read, researcher-only review, review-version conflict, idempotent retry, owner/code withdrawal, rejection of withdrawn IDs, daily limits surviving withdrawal, expiry visibility and purge. This is stronger than inspecting SQL text, but it does not test hosted Supabase Auth, CORS, infrastructure or operator configuration.
 
-## Deployment status and remaining work
+## Field-journal and research-tool upgrade — 22 October
+
+Implemented the original Monster Hunter-inspired journal theme and locally bundled 205,590-byte fictional expedition WebP; no publisher assets or remote fonts were added. Added the Wilds personal-pilot draft starter, searchable interaction atlas with pair denominators and review/source links, and a system assessment describing capabilities and gaps. Desktop/mobile workspace and model-readout screenshots are saved under `screenshots/field-workspace-*.png` and `screenshots/field-lab-*.png` and were visually inspected. The original draft/annotation/review/export workflows still pass.
+
+The local baseline uses verified observed events with ML permission, excludes outcome/label/feedback text as predictors, fits vocabulary on training data only and keeps connected player/source/comparison groups together. Tests verify hand-computed confusion/F1 values, deterministic fixtures and ties, sparse/one-player/mixed-version refusal, latest-review eligibility and unseen-test-token exclusion. Separate synthetic fixtures have fixed fictional metadata; they are deliberately separable pipeline examples, not Monster Hunter measurements or independent annotation evidence.
+
+Added executable local PostgreSQL configuration summaries and CLI reanalysis of checked JSON exports. The SQL test uses repeated feedback to verify child tables are aggregated before joining and keeps missing responses separate from absent feedback sessions. Both synthetic CLI entry points completed locally. No hosted database, model call or training upload is needed.
+
+All thirteen routes were scanned on desktop/mobile with the existing axe WCAG 2/2.1 A/AA tags. Fixed small metadata contrast on parchment, keyboard access to horizontal tables and inline-link distinction. Scans found zero remaining violations in the passing run; this remains an automated check, not complete accessibility certification. 320px layouts and the populated baseline readout passed the tested mobile workflows. The new starter prepares only an editable draft and leaves optional permissions unchecked.
+
+No application-pack source was edited. A fresh private hash baseline was taken on 22 October, including the current signed materials, to preserve user changes made since the original build; 284 files checked against it had zero changes. This pass compares against that fresh baseline rather than treating later user changes as ours. Public recruitment and central collection remain disabled. The baseline is a supplemental classifier demonstration; the agreed PhD theme and submitted ISE2 are unchanged by this work.
+
+## Deployment history and remaining work
 
 GitHub Pages workflow is prepared with immutable action commit references checked against official action repositories, least necessary job permissions, tests, a production build and central collection forced off. Relative assets and repository-subpath navigation were tested locally.
 

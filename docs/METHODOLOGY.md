@@ -16,7 +16,7 @@ The analysis reports counts and denominators for the current view and describes 
 
 The split-group export connects sessions sharing a participant, source group or comparison pair. It is a conservative grouping aid, not an assigned or verified train/test split. Independently inspect duplicate videos, overlapping clips and mechanic combinations. Later prediction datasets must also prevent future-outcome leakage and fit preprocessing on training data only.
 
-Future model-assisted annotation enters a separate prediction table with model/version/prompt, intervals, score limitations and mandatory unreviewed status. Recorded ML-processing permission is required. Model scores are not calibrated probabilities. No model is invoked or trained by this prototype.
+Future model-assisted annotation enters a separate prediction table with model/version/prompt, intervals, score limitations and mandatory unreviewed status. Recorded ML-processing permission is required. Model scores are not calibrated probabilities. No hosted or video model is called. The optional Baseline lab fits a local Bernoulli component classifier on eligible reviewed/permissioned records and reports one fixed group holdout against a majority comparator; this supplemental engineering exercise is not the proposed relational predictor. It does not write predictions into raw annotations. See [methods and limitations](BASELINE_LAB.md).
 
 All public examples are synthetic and explicitly labelled. Local records are browser drafts, never implicitly submitted. Centrally submitted records are accessible only through the configured authenticated backend. No public recruitment, institutional approval, publisher partnership or dataset permission is claimed.
 

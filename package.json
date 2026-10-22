@@ -12,6 +12,8 @@
     "test:e2e": "playwright test",
     "test:backend": "tsx --test tests/backend.integration.ts",
     "verify:live": "node scripts/verify-live.mjs",
+    "analyse:synthetic": "tsx scripts/analyse-export.ts --synthetic",
+    "baseline:synthetic": "tsx scripts/run-baseline.ts --synthetic",
     "format": "prettier --write src backend build tests scripts *.ts *.json"
   },
   "dependencies": {

@@ -42,6 +42,9 @@ try {
       "dataset",
       "collection",
       "method",
+      "explorer",
+      "learning",
+      "roadmap",
     ]) {
       await page.goto(`${url.href}#${route}`, { waitUntil: "networkidle" });
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

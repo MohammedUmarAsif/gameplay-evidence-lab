@@ -23,6 +23,10 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
+      - name: Verify reproducible synthetic analysis entry points
+        run: |
+          npm run baseline:synthetic > /dev/null
+          npm run analyse:synthetic > /dev/null
       - run: npm run build
         env:
           VITE_COLLECTION_ENABLED: "false"

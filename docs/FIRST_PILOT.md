@@ -12,11 +12,11 @@ Record a short 30–120 second clip using your preferred capture tool. This is a
 
 ## Record the context
 
-Switch to **Private local pilot**. Save a study with your question, intended measures, retention and permitted media use. The template is draft personal-pilot information, not university-approved wording. Keep it unchanged for a session once its information version has been recorded. Create a new protocol if you need a new version.
+Use **Plan a Wilds pilot** on the workspace to prepare an editable personal protocol draft in **Private local pilot**. This does not save a study or select consent for you; the session game title is prefilled but editable. Alternatively switch modes and define a study yourself. Save a study with your question, intended measures, retention and permitted media use. The template is draft personal-pilot information, not university-approved wording. Keep it unchanged for a session once its information version has been recorded. Create a new protocol if you need a new version.
 
 Create a session. Enter the game version if known; otherwise use `unknown`. Record the configuration, encounter, conditions and exact recording duration in seconds. Use a random player pseudonym, not your real name or account ID. Keep the same pseudonym for your later sessions if they belong to the same player. Use the same source-group ID for sessions from the same recording/episode.
 
-Read and actively select the required adult/information choices. Media reuse and ML processing are separate, optional and initially unchecked. Do not select those permissions unless you intend their stated use. This prototype does not call models.
+Read and actively select the required adult/information choices. Media reuse and ML processing are separate, optional and initially unchecked. Do not select those permissions unless you intend their stated use. No hosted model is called; the optional Baseline lab fits a small local classifier only on eligible permissioned records. Review your study's permitted processing before using it.
 
 ## Annotate and review
 
@@ -47,5 +47,7 @@ To test deletion, back up first, then delete a disposable local session. Linked 
 In your private research diary record the time spent, ambiguous labels, missing context, replay problems, export issues and changes needed to the protocol. These are instrument-quality observations. They do not establish model accuracy, a causal mechanic effect or player-population preferences.
 
 For a first concrete success, aim to produce one fully traced record: configuration → session → event interval → raw feedback → reviewed label → validated export. Expand only after that works reliably.
+
+Use **Interaction atlas** to search components and return to the raw evidence. The **Baseline lab** intentionally refuses a one-player pilot as independent train/test evidence. To inspect its engineering workflow now, switch to synthetic mode and load its separate benchmark. Scores on that constructed fixture are not Monster Hunter results. See [baseline methods and local SQL commands](BASELINE_LAB.md).
 
 Central collection is optional and disabled until configured. Do not recruit or submit other people's gameplay merely because the public demo is online.

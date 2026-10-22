@@ -3,6 +3,7 @@ import "@primer/css/dist/base.css";
 import "@primer/css/dist/buttons.css";
 import "@primer/css/dist/forms.css";
 import "./styles.css";
+import "./field-theme.css";
 import { z } from "zod";
 import {
   checked,
@@ -25,6 +26,10 @@ import { demoDataset } from "./demo";
 import { loadLocal, saveLocal, eraseLocal, LOCAL_KEY } from "./storage";
 import { analysisView } from "./analysis-view";
 import { prepareLocalVideo } from "./media";
+import { runBaseline } from "./learning";
+import { benchmarkDemo } from "./benchmark-demo";
+import { explorerView, learningView } from "./research-views";
+import { assessmentView } from "./system-assessment";
 import {
   exportEnvelope,
   exportZip,
@@ -56,6 +61,10 @@ let collection: PrivateCollection | null = null,
 let pendingReceipt: { submissionId: string; withdrawalCode: string } | null =
   null;
 let analysisConfiguration = "all";
+let explorerQuery = "",
+  explorerVerified = false;
+let pilotGame = "";
+let baselineResult: ReturnType<typeof runBaseline> | null = null;
 const config = backendConfig();
 const app = document.querySelector<HTMLDivElement>("#app")!;
 const esc = (value: unknown) =>
@@ -93,6 +102,7 @@ const originLabel = () =>
 const activeSession = () =>
   data.sessions.find((s) => s.id === selectedSession) ?? data.sessions[0];
 function clearMedia() {
+  baselineResult = null;
   if (mediaURL) URL.revokeObjectURL(mediaURL);
   mediaURL = mediaName = mediaSession = "";
   startMark = endMark = 0;
@@ -128,6 +138,7 @@ function save(next: Dataset, message: string) {
     local = { data: validated };
   } else demo = validated;
   data = validated;
+  baselineResult = null;
   dirty = false;
   pendingReceipt = null;
   setStatus(message);
@@ -169,6 +180,10 @@ function switchMode(next: Mode) {
   dirty = false;
   pendingReceipt = null;
   mode = next;
+  pilotGame = "";
+  baselineResult = null;
+  explorerQuery = "";
+  explorerVerified = false;
   analysisConfiguration = "all";
   if (next === "local") {
     local = loadLocal();
@@ -183,12 +198,14 @@ function workspace() {
   const issues = warnings(data),
     reviewed = data.events.filter((e) => latestReview(data, e.id)).length;
   return (
+    `<section class="field-banner"><div class="field-banner-copy"><span class="section-kicker">MONSTER HUNTER / INDEPENDENT RESEARCH JOURNAL</span><h2>Every hunt<br>leaves evidence.</h2><p>Study the interaction.<br>Keep the observation. Question the inference.</p><span class="field-stamp">FIELD NOTES · 001</span><br><button class="btn" type="button" data-action="wilds-pilot">Plan a Wilds pilot</button></div><div class="field-banner-art" role="img" aria-label="Original fictional expedition landscape illustration"></div></section>` +
     title(
       "Evidence workspace",
       "A traceable path from a gameplay moment to a reviewed record.",
       button("New session", "new-session", "btn-primary"),
     ) +
     `<div class="metrics"><div><strong>${data.sessions.length}</strong><span>sessions recorded</span></div><div><strong>${data.events.length}</strong><span>timestamped events</span></div><div><strong>${reviewed}<small> / ${data.events.length}</small></strong><span>events with review</span></div></div>` +
+    `<section class="field-tools" aria-label="Research tools"><a href="#explorer"><span class="section-kicker">01 / EVIDENCE</span><strong>Trace an interaction</strong><span>Search component pairs and return to their observations.</span></a><a href="#learning"><span class="section-kicker">02 / EXPERIMENT</span><strong>Challenge a baseline</strong><span>Inspect a grouped holdout, a confusion matrix and the limits.</span></a><a href="#roadmap"><span class="section-kicker">03 / ENGINEERING</span><strong>Know what each system solves</strong><span>Working capabilities, honest gaps and the next useful upgrade.</span></a></section>` +
     `<div class="work-grid"><section class="panel"><div class="panel-heading"><h2>Session notebook</h2><a href="#sessions">View all sessions</a></div>${sessionTable()}<div class="panel-foot">${mode === "demo" ? "Fictional RPG examples. No participant observations or measured findings." : "Local drafts are not centrally submitted. Export a backup after each session."}</div></section>
     <aside class="panel next-panel"><span class="section-kicker">Research workflow</span><h2>Keep the evidence connected.</h2><ol class="workflow-list"><li><a href="#study">Define a study</a><span>Question, measures and information</span></li><li><a href="#sessions">Record configuration</a><span>Context and explicit unknowns</span></li><li><a href="#annotate">Annotate a moment</a><span>Interval, action and outcome</span></li><li><a href="#review">Review, then export</a><span>Original and corrected labels</span></li></ol><a href="#method">Read the method and limitations →</a></aside></div>` +
     `<section class="panel"><div class="panel-heading"><h2>Quality queue</h2><span>${issues.length} checks to inspect</span></div>${
@@ -256,7 +273,7 @@ function sessionsView() {
       "Study",
       data.studies.map((s) => [s.id, s.title]),
       s.id,
-    )}${input("game", "Game title", "", "required")}${input("gameVersion", "Game version", "unknown", "required")}${select("platform", "Platform", ["PC", "PlayStation", "Xbox", "Switch", "Other", "unknown"])}
+    )}${input("game", "Game title", pilotGame, "required")}${input("gameVersion", "Game version", "unknown", "required")}${select("platform", "Platform", ["PC", "PlayStation", "Xbox", "Switch", "Other", "unknown"])}
     ${select("experience", "Experience with this game", [
       ["unknown", "Unknown / prefer not to answer"],
       ["new", "New"],
@@ -284,7 +301,7 @@ function sessionsView() {
     ${input("groupId", "Episode / source grouping ID", `episode-${uid().slice(0, 8)}`, 'required pattern="[a-zA-Z0-9_-]+"')}
     ${input("evidenceRef", "Optional private evidence reference (HTTPS, no signed links)", "", 'type="url"')}
     </div><div class="information"><h3>Information and choices</h3><p>Protocol ${esc(s.protocolVersion)} · Information ${esc(s.consentVersion)}</p><p id="study-info">${esc(s.informationText)}</p><p><strong>Permitted media use:</strong> ${esc(s.permittedMediaUse)}</p><p><strong>Study contact:</strong> ${esc(s.contact) || "No central study contact configured; personal local pilot only."}</p><p><strong>Withdrawal:</strong> ${esc(s.deletion)}</p><p>${esc(s.retention)}</p><p>Media reuse and ML processing are separate optional choices. Local clips are not uploaded. Do not include another person's identity without permission.</p>
-    ${check("adultConfirmed", "I am 18 or older (or the recorded controller is simulated and I am an adult researcher).")}${check("participation", "I have read this study information and agree to record this pilot session.")}${check("mediaReuse", "Optional: permit recording/media reuse under this study’s stated permitted use.")}${check("mlProcessing", "Optional: permit ML-assisted processing under this study’s stated permitted use. No model is called by this prototype.")}
+    ${check("adultConfirmed", "I am 18 or older (or the recorded controller is simulated and I am an adult researcher).")}${check("participation", "I have read this study information and agree to record this pilot session.")}${check("mediaReuse", "Optional: permit recording/media reuse under this study’s stated permitted use.")}${check("mlProcessing", "Optional: permit ML-assisted processing under this study’s stated permitted use. No hosted model is called. Optional baseline training runs locally.")}
     </div>${submit("Save session")}</form>`
   );
 }
@@ -518,7 +535,7 @@ function methodView() {
       "Method and limitations",
       "A collection instrument for a proposed research programme.",
     ) +
-    `<article class="panel prose"><h2>From observation to evidence</h2><p>This instrument supports <em>Multimodal Learning of RPG System Interactions for Evidence-Based Game Design</em>. It collects configurations, timestamped observations and feedback, preserves provenance and supports researcher review. It does not implement the proposed relational predictor or establish novelty.</p><h2>Three distinct data modes</h2><dl><dt>Synthetic demonstration</dt><dd>Fictional examples in memory. They are not empirical observations and never become local or centrally submitted data.</dd><dt>Private local pilot</dt><dd>Records persist in this browser profile. No recording bytes are uploaded or stored. Browser clearing, quotas or device loss may remove drafts. Export a backup. Use a private device.</dd><dt>Private research collection</dt><dd>Available only with a configured backend, invited authentication and an active study. The server controls access; hiding a page is not authorisation. Public recruitment is disabled.</dd></dl><h2>What is and is not measured</h2><p>Annotations describe observable events, self-reports, machine suggestions or explicit unknowns. Video does not establish hidden hitboxes, invulnerability frames or causal engine rules. Custom 1–5 feedback items are not a validated scale. More playtime is not interpreted as enjoyment.</p><h2>Comparisons and later learning</h2><p>Ordinary human comparisons may include learning, fatigue and adaptation. Only properly documented simulator interventions can support their stated controlled interpretation. Keep entire players, sessions, source groups and comparison pairs together in later splits. The export provides grouping aids, not a ready-made experimental benchmark.</p><h2>Review and model boundaries</h2><p>Raw labels and feedback are never overwritten by corrections or AI text. Reviews append a new version. Imported VLM suggestions record model, version, prompt, interval and limitations; they require recorded ML permission and remain unreviewed. No hosted AI calls or model training run here.</p><h2>Privacy and withdrawal</h2><p>A local recording is opened through a temporary device URL. Reattach it after reload. Evidence links are not embedded or fetched automatically; opening a public link may disclose viewing metadata. Do not use links containing access tokens. Exports contain free text and may include references, so inspect them before sharing. Delete local sessions here, central submissions through the owning account, and exported backups separately. No anonymity guarantee is made; GitHub Pages logs visitor IPs.</p><h2>Affiliation and study status</h2><p>Independent prototype. No Capcom involvement, university ethics approval, research results, funding or admission is implied. Do not recruit participants until the applicable institutional review and operational requirements are settled.</p><h2>First personal pilot</h2><ol><li>Switch to Private local pilot and save a study.</li><li>Record a short clip on your device using your preferred capture tool.</li><li>Save a session with its configuration and exact recording duration.</li><li>Choose the local video, seek and mark one event.</li><li>Record neutral feedback, review the event, and export JSON plus ZIP.</li><li>Reimport the JSON in a cleared local workspace to verify your backup.</li></ol></article>`
+    `<article class="panel prose"><h2>From observation to evidence</h2><p>This instrument supports <em>Multimodal Learning of RPG System Interactions for Evidence-Based Game Design</em>. It collects configurations, timestamped observations and feedback, preserves provenance and supports researcher review. It does not implement the proposed relational predictor or establish novelty.</p><h2>Three distinct data modes</h2><dl><dt>Synthetic demonstration</dt><dd>Fictional examples in memory. They are not empirical observations and never become local or centrally submitted data.</dd><dt>Private local pilot</dt><dd>Records persist in this browser profile. No recording bytes are uploaded or stored. Browser clearing, quotas or device loss may remove drafts. Export a backup. Use a private device.</dd><dt>Private research collection</dt><dd>Available only with a configured backend, invited authentication and an active study. The server controls access; hiding a page is not authorisation. Public recruitment is disabled.</dd></dl><h2>What is and is not measured</h2><p>Annotations describe observable events, self-reports, machine suggestions or explicit unknowns. Video does not establish hidden hitboxes, invulnerability frames or causal engine rules. Custom 1–5 feedback items are not a validated scale. More playtime is not interpreted as enjoyment.</p><h2>Comparisons and later learning</h2><p>Ordinary human comparisons may include learning, fatigue and adaptation. Only properly documented simulator interventions can support their stated controlled interpretation. Keep entire players, sessions, source groups and comparison pairs together in later splits. The export provides grouping aids, not a ready-made experimental benchmark.</p><h2>Review and model boundaries</h2><p>Raw labels and feedback are never overwritten by corrections or AI text. Reviews append a new version. Imported VLM suggestions record model, version, prompt, interval and limitations; they require recorded ML permission and remain unreviewed. No hosted AI calls are made. The optional Baseline lab fits a small local component classifier after eligibility checks; it never alters raw annotations.</p><h2>Privacy and withdrawal</h2><p>A local recording is opened through a temporary device URL. Reattach it after reload. Evidence links are not embedded or fetched automatically; opening a public link may disclose viewing metadata. Do not use links containing access tokens. Exports contain free text and may include references, so inspect them before sharing. Delete local sessions here, central submissions through the owning account, and exported backups separately. No anonymity guarantee is made; GitHub Pages logs visitor IPs.</p><h2>Affiliation and study status</h2><p>Independent prototype. No Capcom involvement, university ethics approval, research results, funding or admission is implied. Do not recruit participants until the applicable institutional review and operational requirements are settled.</p><h2>First personal pilot</h2><ol><li>Switch to Private local pilot and save a study.</li><li>Record a short clip on your device using your preferred capture tool.</li><li>Save a session with its configuration and exact recording duration.</li><li>Choose the local video, seek and mark one event.</li><li>Record neutral feedback, review the event, and export JSON plus ZIP.</li><li>Reimport the JSON in a cleared local workspace to verify your backup.</li></ol></article>`
   );
 }
 
@@ -566,6 +583,21 @@ const routes: Record<
     description: "Quality and documented files",
     view: datasetView,
   },
+  explorer: {
+    label: "Interaction atlas",
+    description: "Component evidence",
+    view: () => explorerView(data, explorerQuery, explorerVerified),
+  },
+  learning: {
+    label: "Baseline lab",
+    description: "Grouped evaluation",
+    view: () => learningView(data, baselineResult),
+  },
+  roadmap: {
+    label: "System assessment",
+    description: "Capability and next steps",
+    view: assessmentView,
+  },
   collection: {
     label: "Private collection",
     description: config ? "Invited access" : "Unavailable",
@@ -579,7 +611,7 @@ const routes: Record<
 };
 function render() {
   if (!routes[page]) page = "workspace";
-  app.innerHTML = `<a class="skip-link" href="#main-content">Skip to working area</a><div class="app-shell"><aside class="sidebar"><a href="#workspace" class="brand"><span class="brand-mark" aria-hidden="true">g<span>e</span></span><span>Gameplay<br><strong>Evidence Lab</strong></span></a><div class="sidebar-label">RESEARCH WORKBENCH</div><nav aria-label="Primary">${Object.entries(
+  app.innerHTML = `<a class="skip-link" href="#main-content">Skip to working area</a><div class="app-shell"><aside class="sidebar"><a href="#workspace" class="brand"><span class="brand-mark" aria-hidden="true">HF</span><span>HUNTER’S<br><strong>Field Lab</strong></span></a><div class="sidebar-label">INDEPENDENT FIELD JOURNAL</div><nav aria-label="Primary">${Object.entries(
     routes,
   )
     .map(
@@ -588,8 +620,13 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-foot"><strong>Evidence before inference.</strong><p>Independent prototype.<br>No participant recruitment.</p></div></aside><div class="main-shell"><header class="topbar"><div class="breadcrumb">Research instruments <span>/</span> ${routes[page].label}</div><a href="#method">Protocol & privacy</a></header><div class="origin-bar ${mode}"><div><span class="origin-indicator" aria-hidden="true"></span><strong>${originLabel()}</strong><span>${mode === "demo" ? "Fictional records. No research findings." : "This device only. Not centrally submitted."}</span></div><div class="mode-switch" role="group" aria-label="Data mode"><button type="button" data-mode="demo" aria-pressed="${mode === "demo"}">Synthetic demo</button><button type="button" data-mode="local" aria-pressed="${mode === "local"}">Private local pilot</button></div></div><main id="main-content"><div id="error-summary" role="alert" tabindex="-1" ${!error ? "hidden" : ""}>${esc(error)}</div><div id="status-message" role="status" aria-live="polite" ${!status ? "hidden" : ""}>${esc(status)}</div>${routes[page].view()}</main><footer class="app-footer"><span>No recordings leave this device automatically.</span><span>Instrument 0.1 · Schema 1.0</span></footer></div></div>`;
+    )}</nav><div class="sidebar-foot"><strong>Observe. Record. Verify.</strong><p>Independent prototype.<br>No participant recruitment.</p></div></aside><div class="main-shell"><header class="topbar"><div class="breadcrumb">Field research <span>/</span> ${routes[page].label}</div><a href="#method">Protocol & privacy</a></header><div class="origin-bar ${mode}"><div><span class="origin-indicator" aria-hidden="true"></span><strong>${originLabel()}</strong><span>${mode === "demo" ? "Fictional records. No research findings." : "This device only. Not centrally submitted."}</span></div><div class="mode-switch" role="group" aria-label="Data mode"><button type="button" data-mode="demo" aria-pressed="${mode === "demo"}">Synthetic demo</button><button type="button" data-mode="local" aria-pressed="${mode === "local"}">Private local pilot</button></div></div><main id="main-content"><div id="error-summary" role="alert" tabindex="-1" ${!error ? "hidden" : ""}>${esc(error)}</div><div id="status-message" role="status" aria-live="polite" ${!status ? "hidden" : ""}>${esc(status)}</div>${routes[page].view()}</main><footer class="app-footer"><span>No recordings leave this device automatically.</span><span>Instrument 0.1 · Schema 1.0</span></footer></div></div>`;
   document.querySelector("h1")?.setAttribute("tabindex", "-1");
+  document.querySelectorAll<HTMLElement>(".table-wrap").forEach((table, i) => {
+    table.tabIndex = 0;
+    table.setAttribute("role", "region");
+    table.setAttribute("aria-label", `Scrollable data table ${i + 1}`);
+  });
   wire();
 }
 function dataForm(form: HTMLFormElement) {
@@ -739,7 +776,7 @@ function wire() {
     studySelect.onchange = () => {
       const study = data.studies.find((s) => s.id === studySelect.value)!;
       const info = document.querySelector<HTMLElement>(".information")!;
-      info.innerHTML = `<h3>Information and choices</h3><p>Protocol ${esc(study.protocolVersion)} · Information ${esc(study.consentVersion)}</p><p id="study-info">${esc(study.informationText)}</p><p><strong>Permitted media use:</strong> ${esc(study.permittedMediaUse)}</p><p><strong>Study contact:</strong> ${esc(study.contact) || "No central study contact configured; personal local pilot only."}</p><p><strong>Withdrawal:</strong> ${esc(study.deletion)}</p><p>${esc(study.retention)}</p><p>Media reuse and ML processing are optional and separate. Your choices have been reset for this study.</p>${check("adultConfirmed", "I am 18 or older (or the recorded controller is simulated and I am an adult researcher).")}${check("participation", "I have read this study information and agree to record this pilot session.")}${check("mediaReuse", "Optional: permit recording/media reuse under this study’s stated permitted use.")}${check("mlProcessing", "Optional: permit ML-assisted processing under this study’s stated permitted use. No model is called by this prototype.")}`;
+      info.innerHTML = `<h3>Information and choices</h3><p>Protocol ${esc(study.protocolVersion)} · Information ${esc(study.consentVersion)}</p><p id="study-info">${esc(study.informationText)}</p><p><strong>Permitted media use:</strong> ${esc(study.permittedMediaUse)}</p><p><strong>Study contact:</strong> ${esc(study.contact) || "No central study contact configured; personal local pilot only."}</p><p><strong>Withdrawal:</strong> ${esc(study.deletion)}</p><p>${esc(study.retention)}</p><p>Media reuse and ML processing are optional and separate. Your choices have been reset for this study.</p>${check("adultConfirmed", "I am 18 or older (or the recorded controller is simulated and I am an adult researcher).")}${check("participation", "I have read this study information and agree to record this pilot session.")}${check("mediaReuse", "Optional: permit recording/media reuse under this study’s stated permitted use.")}${check("mlProcessing", "Optional: permit ML-assisted processing under this study’s stated permitted use. No hosted model is called. Optional baseline training runs locally.")}`;
       const configurations = document.querySelector<HTMLSelectElement>(
         '#session-form [name="configurationId"]',
       )!;
@@ -883,7 +920,24 @@ async function handleForm(form: HTMLFormElement) {
   const f = dataForm(form),
     next = structuredClone(data);
   try {
-    if (form.id === "study-form") {
+    if (form.id === "explorer-form") {
+      explorerQuery = f.get("query");
+      explorerVerified = f.bool("verifiedOnly");
+      dirty = false;
+    } else if (form.id === "baseline-form") {
+      dirty = false;
+      baselineResult = null;
+      try {
+        baselineResult = runBaseline(data, f.get("studyId"));
+      } catch (e) {
+        render();
+        throw e;
+      }
+      dirty = false;
+      setStatus(
+        "Local experiment completed. Review the split, comparator and limitations before interpreting a score.",
+      );
+    } else if (form.id === "study-form") {
       const current = draftStudy ?? studyTemplate();
       const s = {
         ...current,
@@ -1099,7 +1153,68 @@ async function handleForm(form: HTMLFormElement) {
 }
 async function action(name: string) {
   try {
-    if (name === "new-session") navigate("sessions");
+    if (name === "wilds-pilot") {
+      if (
+        dirty &&
+        !confirm(
+          "Discard unsaved form changes and prepare a new personal pilot?",
+        )
+      )
+        return;
+      dirty = false;
+      if (mode !== "local") switchMode("local");
+      pilotGame = "Monster Hunter Wilds";
+      draftStudy = {
+        ...studyTemplate(),
+        title: "Wilds personal interaction pilot",
+        question:
+          "For one declared action and encounter, when is completion visible versus interrupted?",
+        inclusion:
+          "Adult researcher’s own solo gameplay for an initial local instrument pilot.",
+        measures:
+          "Timestamped action completion/interruption, configuration context and separately reported experience. No hidden engine state is inferred.",
+      };
+      setStatus(
+        "Draft personal Wilds protocol prepared. Review and save it; no participation or ML permissions have been selected.",
+      );
+      navigate("study");
+    } else if (name === "load-benchmark") {
+      if (mode !== "demo")
+        throw new Error(
+          "The synthetic fixture is available only in synthetic mode.",
+        );
+      if (
+        !confirm(
+          "Replace only the in-memory synthetic workspace with 24 deliberately constructed fixture events? Your private local records are unaffected.",
+        )
+      )
+        return;
+      save(
+        benchmarkDemo(),
+        "Synthetic benchmark loaded: deliberately separable fixture labels, not Monster Hunter observations or research results.",
+      );
+      selectedEvent = selectedSession = "";
+      clearMedia();
+      render();
+    } else if (name === "export-baseline") {
+      if (!baselineResult)
+        throw new Error("Run the experiment on the current dataset first.");
+      const experiment = baselineResult;
+      const envelope = await exportEnvelope(data);
+      download(
+        `${data.origin}-baseline-experiment.json`,
+        JSON.stringify(
+          {
+            ...experiment,
+            sourceDatasetSHA256: envelope.exportMetadata.datasetSHA256,
+            exportedAt: now(),
+          },
+          null,
+          2,
+        ),
+        "application/json",
+      );
+    } else if (name === "new-session") navigate("sessions");
     else if (name === "go-study") navigate("study");
     else if (name === "go-annotate") navigate("annotate");
     else if (name === "new-study") {
